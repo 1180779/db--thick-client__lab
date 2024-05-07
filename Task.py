@@ -1,8 +1,5 @@
 from db_connection import cnx_mssql
 from random import randint
-from Decimal import *
-from Datetime import *
-import re
 
 class Task(object):
     def __init__(self):
@@ -58,66 +55,37 @@ class Task(object):
     def Task2(self):
         print("log: Executing task 2")
         self.Print2()
+
+        self.cursor.execute("SELECT * FROM Orders")
+        rows = self.cursor.fetchall()
         for i in range(1, 11):
-            querry = "INSERT INTO Orders VALUES " + self.__getrandomvalues()
-            print("querry  = " + querry)
-            self.cursor.execute(querry)
+            order = self.__getrandomvalues(rows)
+            print("new order = " + order)
+            self.cursor.execute("INSERT INTO Orders VALUES " + order)
 
         print("log: Added ten (10) random orders")
         self.Print2()
         cnx_mssql.commit()
 
     def __concatenate(self, values) -> str:
-        res = "("
+        res = ''
         for value in values:
-            res = res + str(value) + ','
-        return res[:-1] + ')'
+            temp = value
+            if isinstance(value, str):
+                temp = value.replace('\'', '\'\'')
+            res += '\'' + str(temp) + "\',"
+        return '(' + res[:-1] + ')'
 
-    def __getrandomvalues(self):
-        self.cursor.execute("SELECT * FROM Orders")
-        rows = self.cursor.fetchall()
-
-        items = len(self.__separatevalues(rows[0]))
+    def __getrandomvalues(self, rows):
+        items = len(rows[0])
         values = []
         for i in range(1, items):
-            randomidx = self.__getrandominx(rows)
-            string = self.__separatevalues(rows[self.__getrandominx(rows)])[i]
-            while isinstance(string, str) and string == 'None':
-                idx = self.__getrandominx(rows)
-                string = self.__separatevalues(rows[idx])[i]
-            if i in [3, 4, 5]:
-                # account for datetime
-                val = Datetime(string)
-                values.append(val)
-            elif i == 7:
-                # account for decimal ('money' type field) 
-                val = Decimal(string)
-                values.append(val)
-            else:
-                values.append(string)
-
+            val = rows[self.__getrandominx(rows)][i]
+            while val == None:
+                val = rows[self.__getrandominx(rows)][i]
+            values.append(val)
         return self.__concatenate(values)
-            
-    def __separatevalues(self, row):
-        row = str(row)
-        row = row[1:-1]
-        row = row.replace(' ', '')
-        res =  re.split(r',(?![^(]*\))', row)
-        return res
-
-    def __getmaxid(self) -> int:
-        self.cursor.execute("SELECT OrderID FROM Orders")
-        rows = self.cursor.fetchall()
-        maxid = 0
-        for row in rows:
-            row = str(row)
-            id = int(row[1:-2])
-            if id > maxid:
-                maxid = id
-        return maxid
         
     def __getrandominx(self, rows) -> int:
         max = len(rows)
         return randint(1, max) - 1
-
-
