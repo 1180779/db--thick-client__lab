@@ -9,10 +9,6 @@
    * in loop add 10 new orders using 'INSERT' by using modified copies of existing orders
    * commit the changes as a transaction
 
-## Progress
-1. [X] Employees table
-2. [ ] Orders table
-
 ## cnf.ini
 The missing file ``cnf.ini`` contains the database login information. It has the following contents
 ```ini
